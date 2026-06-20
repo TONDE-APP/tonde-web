@@ -1,0 +1,51 @@
+<svg width="1440" height="960" viewBox="0 0 1440 960" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1440" height="960" rx="32" fill="#0A0E1A"/>
+  <rect x="24" y="24" width="1392" height="912" rx="28" fill="#10182A" stroke="#334155"/>
+  <rect x="56" y="56" width="1328" height="56" rx="16" fill="#1A2235"/>
+  <text x="88" y="92" fill="#E5E7EB" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">TONDE Guichet</text>
+  <text x="1160" y="92" fill="#6C47FF" font-family="JetBrains Mono, monospace" font-size="18">Mode agent</text>
+  <rect x="56" y="148" width="404" height="748" rx="24" fill="#0A0E1A" stroke="#334155"/>
+  <text x="88" y="200" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="20">File active</text>
+  <text x="88" y="270" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="64" font-weight="700">T-047</text>
+  <text x="88" y="316" fill="#00D4FF" font-family="Inter, Arial, sans-serif" font-size="22">Appel vers guichet B2</text>
+  <rect x="88" y="360" width="340" height="110" rx="20" fill="#1A2235"/>
+  <text x="116" y="408" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="18">Temps moyen</text>
+  <text x="116" y="448" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="34" font-weight="700">11 min</text>
+  <rect x="88" y="496" width="340" height="110" rx="20" fill="#1A2235"/>
+  <text x="116" y="544" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="18">Priorité</text>
+  <text x="116" y="584" fill="#F8FAFC" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700">Service clientèle</text>
+  <rect x="88" y="632" width="340" height="200" rx="20" fill="#1A2235"/>
+  <text x="116" y="680" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="18">Raccourcis clavier</text>
+  <text x="116" y="724" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="24">N  Appeler suivant</text>
+  <text x="116" y="764" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="24">R  Reprogrammer</text>
+  <text x="116" y="804" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="24">F  Marquer absent</text>
+  <rect x="492" y="148" width="892" height="350" rx="24" fill="#0A0E1A" stroke="#334155"/>
+  <text x="528" y="198" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="20">Tickets en attente</text>
+  <g>
+    <rect x="528" y="230" width="820" height="64" rx="16" fill="#1A2235"/>
+    <text x="560" y="270" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="24">T-048</text>
+    <text x="760" y="270" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="20">Compte courant</text>
+    <text x="1180" y="270" fill="#00D4FF" font-family="Inter, Arial, sans-serif" font-size="20">06 min</text>
+  </g>
+  <g>
+    <rect x="528" y="308" width="820" height="64" rx="16" fill="#1A2235"/>
+    <text x="560" y="348" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="24">T-049</text>
+    <text x="760" y="348" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="20">Opération caisse</text>
+    <text x="1180" y="348" fill="#00D4FF" font-family="Inter, Arial, sans-serif" font-size="20">09 min</text>
+  </g>
+  <g>
+    <rect x="528" y="386" width="820" height="64" rx="16" fill="#1A2235"/>
+    <text x="560" y="426" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="24">T-050</text>
+    <text x="760" y="426" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="20">Réclamation</text>
+    <text x="1180" y="426" fill="#00D4FF" font-family="Inter, Arial, sans-serif" font-size="20">12 min</text>
+  </g>
+  <rect x="492" y="530" width="428" height="366" rx="24" fill="#0A0E1A" stroke="#334155"/>
+  <text x="528" y="580" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="20">Statut</text>
+  <text x="528" y="646" fill="#F8FAFC" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="700">Synchronisé</text>
+  <circle cx="538" cy="690" r="6" fill="#00D4FF"/>
+  <text x="556" y="696" fill="#CFFAFE" font-family="Inter, Arial, sans-serif" font-size="20">Propagation temps réel vers mobile et TV</text>
+  <rect x="956" y="530" width="428" height="366" rx="24" fill="#0A0E1A" stroke="#334155"/>
+  <text x="992" y="580" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="20">Résilience</text>
+  <text x="992" y="646" fill="#F8FAFC" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="700">Offline-first</text>
+  <text x="992" y="704" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="20">Cache local et reprise après reconnexion</text>
+</svg>

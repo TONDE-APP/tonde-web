@@ -1,0 +1,17 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" rx="32" fill="#050812"/>
+  <rect x="28" y="28" width="1544" height="844" rx="28" fill="#0A0E1A" stroke="#334155"/>
+  <text x="80" y="108" fill="#E5E7EB" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="700">TONDE Display</text>
+  <text x="1270" y="108" fill="#00D4FF" font-family="JetBrains Mono, monospace" font-size="22">Temps réel</text>
+  <text x="80" y="190" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="26">Appel en cours</text>
+  <text x="80" y="350" fill="#00D4FF" font-family="JetBrains Mono, monospace" font-size="160" font-weight="700">T-047</text>
+  <text x="80" y="432" fill="#F8FAFC" font-family="Inter, Arial, sans-serif" font-size="58" font-weight="700">Guichet 3</text>
+  <text x="80" y="492" fill="#94A3B8" font-family="Inter, Arial, sans-serif" font-size="30">Service prioritaire · visibilité à 10 mètres</text>
+  <rect x="80" y="560" width="1440" height="96" rx="24" fill="#10182A" stroke="#334155"/>
+  <text x="120" y="622" fill="#E5E7EB" font-family="Inter, Arial, sans-serif" font-size="34">Prochains tickets</text>
+  <text x="520" y="622" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="30">T-048</text>
+  <text x="740" y="622" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="30">T-049</text>
+  <text x="960" y="622" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="30">T-050</text>
+  <circle cx="112" cy="740" r="6" fill="#6C47FF"/>
+  <text x="132" y="748" fill="#C4B5FD" font-family="Inter, Arial, sans-serif" font-size="24">Annonce vocale multilingue prévue dans l'écosystème TONDE</text>
+</svg>
