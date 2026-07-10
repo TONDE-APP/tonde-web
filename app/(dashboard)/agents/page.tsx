@@ -72,6 +72,33 @@ const ALL_PERMISSIONS: Permission[] = [
 const GUICHETS = ['G-01', 'G-02', 'G-03', 'G-04', 'G-05', 'G-06', 'G-07', 'G-08'];
 const AGENCY_TMT_AVG = 780; // 13 min en secondes
 
+const ALL_SERVICES = [
+  'Ouverture compte', 'Retrait caisse', 'Dépôt espèces',
+  'Virement bancaire', 'Renseignements', 'Prêts & Crédit',
+  'VIP Conseil', 'Caisse générale', 'Change devises', 'Mobile Money',
+];
+
+const ROLE_DESCRIPTIONS: Record<AgentRole, string> = {
+  agent:        'Accès guichet uniquement — traitement des tickets assignés.',
+  supervisor:   'Gestion de l\'équipe + statistiques — ne traite pas de tickets.',
+  admin_agency: 'Accès complet à la configuration de l\'agence.',
+};
+
+const AVATAR_COLORS = ['#6C47FF','#06B6D4','#10B981','#F59E0B','#8B5CF6','#F43F5E','#0EA5E9'];
+
+function generateEmpId(existing: Agent[]): string {
+  const max = existing.reduce((m, a) => {
+    const n = parseInt(a.id.replace('EMP-', ''));
+    return isNaN(n) ? m : Math.max(m, n);
+  }, 100);
+  return `EMP-${max + 1}`;
+}
+
+function getInitials(name: string): string {
+  return name.trim().split(' ').filter(Boolean).slice(0, 2)
+    .map((w) => w[0].toUpperCase()).join('');
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MOCK DATA — mêmes agents que Dashboard/Queue
 // ─────────────────────────────────────────────────────────────────────────────
@@ -651,6 +678,456 @@ function AgentRow({ agent, index, onSelect, onToggle }: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// DRAWER — Création d'un nouvel agent
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface CreateForm {
+  name: string;
+  email: string;
+  role: AgentRole;
+  pin: string;
+  services: string[];
+  guichet: string | null;
+}
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  pin?: string;
+}
+
+function CreateAgentDrawer({ onClose, onCreate, existingAgents }: {
+  onClose: () => void;
+  onCreate: (agent: Agent) => void;
+  existingAgents: Agent[];
+}) {
+  const [form, setForm] = useState<CreateForm>({
+    name: '', email: '', role: 'agent', pin: '', services: [], guichet: null,
+  });
+  const [errors, setErrors]   = useState<FormErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [showPin, setShowPin] = useState(false);
+
+  // ── Validation ──
+  const validate = (f: CreateForm): FormErrors => {
+    const e: FormErrors = {};
+    if (!f.name.trim() || f.name.trim().length < 3)
+      e.name = 'Le nom doit contenir au moins 3 caractères.';
+    if (!f.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email))
+      e.email = 'Adresse e-mail invalide.';
+    if (!f.pin || !/^\d{4,6}$/.test(f.pin))
+      e.pin = 'Le PIN doit contenir entre 4 et 6 chiffres.';
+    return e;
+  };
+
+  const setField = <K extends keyof CreateForm>(key: K, val: CreateForm[K]) => {
+    const updated = { ...form, [key]: val };
+    setForm(updated);
+    if (touched[key]) {
+      setErrors(validate(updated));
+    }
+  };
+
+  const handleBlur = (key: keyof CreateForm) => {
+    setTouched((t) => ({ ...t, [key]: true }));
+    setErrors(validate(form));
+  };
+
+  const generatePin = () => {
+    const pin = String(Math.floor(100000 + Math.random() * 900000)).slice(0, 6);
+    setField('pin', pin);
+    setShowPin(true);
+  };
+
+  const toggleService = (s: string) => {
+    setField('services', form.services.includes(s)
+      ? form.services.filter((x) => x !== s)
+      : [...form.services, s]
+    );
+  };
+
+  const handleSubmit = async () => {
+    const allTouched = Object.fromEntries(
+      ['name', 'email', 'pin'].map((k) => [k, true])
+    );
+    setTouched(allTouched);
+    const errs = validate(form);
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
+    setLoading(true);
+    // Simule l'appel API FastAPI
+    await new Promise((r) => setTimeout(r, 1400));
+    setLoading(false);
+    setSuccess(true);
+
+    const colorIndex = existingAgents.length % AVATAR_COLORS.length;
+    const newAgent: Agent = {
+      id:           generateEmpId(existingAgents),
+      name:         form.name.trim(),
+      email:        form.email.trim(),
+      avatar:       getInitials(form.name),
+      avatarColor:  AVATAR_COLORS[colorIndex],
+      role:         form.role,
+      services:     form.services.length > 0 ? form.services : ['Renseignements'],
+      guichet:      form.guichet,
+      status:       'offline',
+      isActive:     true,
+      ticketsToday: 0,
+      tmt:          0,
+      nps:          0,
+      sparkline:    Array(8).fill({ v: 0 }),
+      permissions: {
+        can_call:     true,
+        can_transfer: form.role !== 'agent' ? true : false,
+        can_pause:    true,
+        can_noshow:   true,
+        can_reports:  form.role !== 'agent',
+        can_settings: form.role === 'admin_agency',
+      },
+    };
+
+    setTimeout(() => { onCreate(newAgent); onClose(); }, 600);
+  };
+
+  // ── Input helper ──
+  const inputCls = (key: keyof FormErrors): React.CSSProperties => ({
+    width: '100%', height: '42px', backgroundColor: '#0F1623',
+    border: `1px solid ${touched[key] && errors[key] ? '#F43F5E' : '#334155'}`,
+    borderRadius: '8px', padding: '0 14px', fontSize: '14px', color: '#f1f5f9',
+    fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' as const,
+    transition: 'border-color 0.15s, box-shadow 0.15s',
+  });
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = '#6C47FF';
+    e.currentTarget.style.boxShadow   = '0 0 0 3px rgba(108,71,255,0.18)';
+  };
+  const handleBlurInput = (e: React.FocusEvent<HTMLInputElement>, key: keyof CreateForm) => {
+    const hasError = touched[key] && errors[key as keyof FormErrors];
+    e.currentTarget.style.borderColor = hasError ? '#F43F5E' : '#334155';
+    e.currentTarget.style.boxShadow   = 'none';
+    handleBlur(key as keyof FormErrors);
+  };
+
+  return (
+    <>
+      {/* Overlay */}
+      <div className="fixed inset-0 z-40"
+        style={{ backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)' }}
+        onClick={onClose} />
+
+      {/* Drawer */}
+      <aside className="fixed right-0 top-0 bottom-0 z-50 flex flex-col"
+        style={{ width: '480px', maxWidth: '95vw', backgroundColor: '#1A2235',
+          borderLeft: '1px solid #334155', boxShadow: '-24px 0 64px rgba(0,0,0,0.5)' }}>
+
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between px-6 py-5 shrink-0"
+          style={{ borderBottom: '1px solid #334155' }}>
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#f1f5f9', lineHeight: 1.2 }}>
+              Nouvel Agent
+            </h2>
+            <p style={{ fontSize: '12px', color: '#475569', marginTop: '3px' }}>
+              Les informations d'accès seront envoyées par e-mail.
+            </p>
+          </div>
+          <button onClick={onClose} aria-label="Fermer"
+            className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+            style={{ color: '#475569', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#e2e8f0'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#475569'; }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* ── Body scrollable ── */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-7">
+
+          {/* ─ SECTION : Identité ─ */}
+          <section>
+            <p style={{ fontSize: '11px', fontWeight: 600, color: '#475569', textTransform: 'uppercase',
+              letterSpacing: '0.08em', marginBottom: '16px' }}>
+              Identité
+            </p>
+            <div className="space-y-4">
+
+              {/* Nom */}
+              <div>
+                <label htmlFor="new-name" style={{ display: 'block', fontSize: '13px', fontWeight: 600,
+                  color: '#94a3b8', marginBottom: '6px' }}>
+                  Nom complet <span style={{ color: '#F43F5E' }}>*</span>
+                </label>
+                <input id="new-name" type="text" value={form.name}
+                  onChange={(e) => setField('name', e.target.value)}
+                  onFocus={handleFocus}
+                  onBlur={(e) => handleBlurInput(e, 'name')}
+                  placeholder="ex: Jean-Pierre Nkurunziza"
+                  style={inputCls('name')} />
+                {touched.name && errors.name && (
+                  <p style={{ fontSize: '11px', color: '#F43F5E', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <AlertTriangle size={10} /> {errors.name}
+                  </p>
+                )}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label htmlFor="new-email" style={{ display: 'block', fontSize: '13px', fontWeight: 600,
+                  color: '#94a3b8', marginBottom: '6px' }}>
+                  Email professionnel <span style={{ color: '#F43F5E' }}>*</span>
+                </label>
+                <input id="new-email" type="email" value={form.email}
+                  onChange={(e) => setField('email', e.target.value)}
+                  onFocus={handleFocus}
+                  onBlur={(e) => handleBlurInput(e, 'email')}
+                  placeholder="ex: j.nkurunziza@banque.bi"
+                  style={inputCls('email')} />
+                {touched.email && errors.email && (
+                  <p style={{ fontSize: '11px', color: '#F43F5E', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <AlertTriangle size={10} /> {errors.email}
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* ─ SECTION : Sécurité & Accès ─ */}
+          <section>
+            <p style={{ fontSize: '11px', fontWeight: 600, color: '#475569', textTransform: 'uppercase',
+              letterSpacing: '0.08em', marginBottom: '16px' }}>
+              Sécurité & Accès
+            </p>
+            <div className="space-y-4">
+
+              {/* Rôle */}
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600,
+                  color: '#94a3b8', marginBottom: '8px' }}>
+                  Rôle <span style={{ color: '#F43F5E' }}>*</span>
+                </label>
+                <div className="space-y-2">
+                  {(Object.keys(ROLES) as AgentRole[]).map((r) => {
+                    const isSelected = form.role === r;
+                    return (
+                      <div key={r} onClick={() => setField('role', r)}
+                        className="flex items-start gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all"
+                        style={{
+                          backgroundColor: isSelected ? ROLES[r].bg : 'rgba(255,255,255,0.02)',
+                          border: `1px solid ${isSelected ? ROLES[r].color : '#334155'}`,
+                        }}>
+                        {/* Radio visuel */}
+                        <div style={{ width: '16px', height: '16px', borderRadius: '50%', marginTop: '2px', flexShrink: 0,
+                          border: `2px solid ${isSelected ? ROLES[r].color : '#334155'}`,
+                          backgroundColor: isSelected ? ROLES[r].color : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}>
+                          {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#fff' }} />}
+                        </div>
+                        <div>
+                          <p style={{ fontSize: '13px', fontWeight: 600,
+                            color: isSelected ? ROLES[r].color : '#64748b' }}>{ROLES[r].label}</p>
+                          <p style={{ fontSize: '11px', color: '#475569', marginTop: '2px', lineHeight: 1.5 }}>
+                            {ROLE_DESCRIPTIONS[r]}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* PIN */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="new-pin" style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8' }}>
+                    Code PIN initial <span style={{ color: '#F43F5E' }}>*</span>
+                  </label>
+                  <button type="button" onClick={generatePin}
+                    style={{ fontSize: '11px', color: '#6C47FF', background: 'none', border: 'none',
+                      cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <RotateCcw size={10} /> Générer aléatoirement
+                  </button>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <input id="new-pin" type={showPin ? 'text' : 'password'} value={form.pin}
+                    onChange={(e) => setField('pin', e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    onFocus={handleFocus}
+                    onBlur={(e) => handleBlurInput(e, 'pin')}
+                    placeholder="4 à 6 chiffres"
+                    inputMode="numeric"
+                    style={{ ...inputCls('pin'), paddingRight: '44px',
+                      fontFamily: form.pin && !showPin ? 'monospace' : 'Inter, sans-serif',
+                      letterSpacing: form.pin && !showPin ? '0.3em' : 'normal' }} />
+                  <button type="button" onClick={() => setShowPin((v) => !v)}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}>
+                    {showPin ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+                        <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {touched.pin && errors.pin && (
+                  <p style={{ fontSize: '11px', color: '#F43F5E', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <AlertTriangle size={10} /> {errors.pin}
+                  </p>
+                )}
+                <p style={{ fontSize: '11px', color: '#334155', marginTop: '5px' }}>
+                  Le PIN sera hashé (bcrypt) avant d'être stocké en base de données.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* ─ SECTION : Assignation Métier ─ */}
+          <section>
+            <p style={{ fontSize: '11px', fontWeight: 600, color: '#475569', textTransform: 'uppercase',
+              letterSpacing: '0.08em', marginBottom: '16px' }}>
+              Assignation Métier
+            </p>
+            <div className="space-y-4">
+
+              {/* Services */}
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600,
+                  color: '#94a3b8', marginBottom: '8px' }}>
+                  Services autorisés
+                  <span style={{ fontSize: '11px', color: '#334155', fontWeight: 400, marginLeft: '6px' }}>
+                    ({form.services.length} sélectionné{form.services.length > 1 ? 's' : ''})
+                  </span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {ALL_SERVICES.map((s) => {
+                    const active = form.services.includes(s);
+                    return (
+                      <button key={s} type="button" onClick={() => toggleService(s)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                        style={{
+                          backgroundColor: active ? 'rgba(108,71,255,0.15)' : 'rgba(255,255,255,0.03)',
+                          color:           active ? '#6C47FF' : '#64748b',
+                          border:          `1px solid ${active ? 'rgba(108,71,255,0.4)' : '#334155'}`,
+                        }}>
+                        {active && <span style={{ marginRight: '4px' }}>✓</span>}
+                        {s}
+                      </button>
+                    );
+                  })}
+                </div>
+                {form.services.length === 0 && (
+                  <p style={{ fontSize: '11px', color: '#475569', marginTop: '8px' }}>
+                    Sans sélection, l'agent recevra le service "Renseignements" par défaut.
+                  </p>
+                )}
+              </div>
+
+              {/* Guichet */}
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600,
+                  color: '#94a3b8', marginBottom: '8px' }}>
+                  Guichet par défaut
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setField('guichet', null)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                    style={{
+                      backgroundColor: form.guichet === null ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
+                      color:           form.guichet === null ? '#94a3b8' : '#475569',
+                      border:          `1px solid ${form.guichet === null ? '#475569' : '#334155'}`,
+                    }}>
+                    Non assigné
+                  </button>
+                  {GUICHETS.map((g) => {
+                    const isOccupied = existingAgents.some((a) => a.guichet === g && a.isActive);
+                    return (
+                      <button key={g} type="button" onClick={() => setField('guichet', g)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                        style={{
+                          backgroundColor: form.guichet === g ? 'rgba(108,71,255,0.15)' : 'rgba(255,255,255,0.02)',
+                          color:           form.guichet === g ? '#6C47FF' : isOccupied ? '#F59E0B' : '#64748b',
+                          border:          `1px solid ${form.guichet === g ? '#6C47FF' : isOccupied ? 'rgba(245,158,11,0.3)' : '#334155'}`,
+                          fontFamily:      'JetBrains Mono, monospace',
+                        }}>
+                        {g}
+                        {isOccupied && !form.guichet && (
+                          <span style={{ fontSize: '9px', color: '#F59E0B' }}>●</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p style={{ fontSize: '11px', color: '#334155', marginTop: '6px' }}>
+                  <span style={{ color: '#F59E0B' }}>●</span>{' '}
+                  Guichets déjà occupés par un agent actif.
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* ── Footer sticky ── */}
+        <div className="shrink-0 px-6 py-4 flex gap-3"
+          style={{ borderTop: '1px solid #334155', backdropFilter: 'blur(8px)',
+            backgroundColor: 'rgba(26,34,53,0.92)' }}>
+          <button onClick={onClose} type="button"
+            className="flex-1 py-2.5 rounded-lg text-sm font-medium transition-all"
+            style={{ backgroundColor: 'transparent', color: '#64748b', border: '1px solid #334155' }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#475569'; e.currentTarget.style.color = '#94a3b8'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#334155'; e.currentTarget.style.color = '#64748b'; }}>
+            Annuler
+          </button>
+          <button onClick={handleSubmit} type="button" disabled={loading || success}
+            className="flex items-center justify-center gap-2 flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all"
+            style={{
+              height: '40px', borderRadius: '8px',
+              backgroundColor: success ? '#10B981' : '#6C47FF',
+              color: '#fff',
+              cursor: loading ? 'wait' : 'pointer',
+              boxShadow: success ? '0 0 16px rgba(16,185,129,0.3)' : '0 0 16px rgba(108,71,255,0.25)',
+              opacity: loading ? 0.9 : 1,
+            }}>
+            {success ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Agent créé !
+              </>
+            ) : loading ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                  style={{ animation: 'spin 0.8s linear infinite' }}>
+                  <path d="M12 2a10 10 0 0 1 10 10"/>
+                </svg>
+                Création en cours…
+              </>
+            ) : (
+              <>
+                <Plus size={15} />
+                Créer l'agent
+              </>
+            )}
+          </button>
+        </div>
+      </aside>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PAGE PRINCIPALE
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -660,6 +1137,7 @@ export default function AgentsPage() {
   const [sortKey, setSortKey]     = useState<SortKey>('name');
   const [sortDir, setSortDir]     = useState<SortDir>('asc');
   const [selected, setSelected]   = useState<Agent | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
   const [filterRole, setFilterRole] = useState<AgentRole | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<AgentStatus | 'all'>('all');
 
@@ -706,6 +1184,10 @@ export default function AgentsPage() {
     setSelected(updated);
   };
 
+  const handleCreate = (newAgent: Agent) => {
+    setAgents((prev) => [newAgent, ...prev]);
+  };
+
   // Stats rapides header
   const onlineCount   = agents.filter((a) => a.isActive && a.status === 'online').length;
   const pauseCount    = agents.filter((a) => a.isActive && a.status === 'pause').length;
@@ -734,6 +1216,7 @@ export default function AgentsPage() {
         </div>
         <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
           style={{ backgroundColor: '#6C47FF', color: '#fff', boxShadow: '0 0 16px rgba(108,71,255,0.3)' }}
+          onClick={() => setShowCreate(true)}
           onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#7c5cff'; }}
           onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#6C47FF'; }}>
           <Plus size={16} />
@@ -869,12 +1352,20 @@ export default function AgentsPage() {
         </div>
       </div>
 
-      {/* ── Drawer ── */}
+      {/* ── Drawer édition ── */}
       {selected && (
         <AgentDrawer
           agent={selected}
           onClose={() => setSelected(null)}
           onUpdate={handleUpdate} />
+      )}
+
+      {/* ── Drawer création ── */}
+      {showCreate && (
+        <CreateAgentDrawer
+          onClose={() => setShowCreate(false)}
+          onCreate={handleCreate}
+          existingAgents={agents} />
       )}
 
       <style>{`
