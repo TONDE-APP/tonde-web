@@ -109,9 +109,14 @@ export function HeroSection() {
                 : "translate-y-4 opacity-0"
             }`}
           >
-            <Button className="h-12 cursor-pointer bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(108,71,255,0.4)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_48px_rgba(108,71,255,0.5)] sm:h-10">
-              Demander une Démo
-              <ArrowRight className="h-4 w-4" />
+            <Button
+              asChild
+              className="h-12 cursor-pointer bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(108,71,255,0.4)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_48px_rgba(108,71,255,0.5)] sm:h-10"
+            >
+              <a href="/dashboard">
+                Demander une Démo
+                <ArrowRight className="h-4 w-4" />
+              </a>
             </Button>
             <Button
               asChild

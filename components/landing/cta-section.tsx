@@ -27,9 +27,11 @@ export function CtaSection() {
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <Button className="bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(108,71,255,0.35)]">
-                Demander une Démo
-                <ArrowRight className="h-4 w-4" />
+              <Button asChild className="bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(108,71,255,0.35)]">
+                <a href="/dashboard">
+                  Demander une Démo
+                  <ArrowRight className="h-4 w-4" />
+                </a>
               </Button>
               <Button
                 variant="outline"

@@ -79,7 +79,10 @@ export function Navigation() {
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
-            <Button className="h-10 cursor-pointer bg-primary text-primary-foreground shadow-[0_12px_32px_rgba(108,71,255,0.35)] hover:bg-primary/95">
+            <Button
+              className="h-10 cursor-pointer bg-primary text-primary-foreground shadow-[0_12px_32px_rgba(108,71,255,0.35)] hover:bg-primary/95"
+              onClick={() => window.location.href = '/dashboard'}
+            >
               Demander une Démo
             </Button>
           </div>
@@ -113,7 +116,7 @@ export function Navigation() {
               ))}
               <Button
                 className="mt-2 h-12 cursor-pointer bg-primary text-primary-foreground"
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={() => { setIsMobileMenuOpen(false); window.location.href = '/dashboard'; }}
               >
                 Demander une Démo
               </Button>
