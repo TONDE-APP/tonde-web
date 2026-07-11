@@ -634,7 +634,7 @@ function AdminShell({ children, criticalAlerts = 2 }: { children: ReactNode; cri
         </header>
 
         {/* ── PAGE CONTENT ── */}
-        <main className="flex-1 overflow-y-auto" style={{ backgroundColor: '#0A0E1A' }}>
+        <main className="flex-1 overflow-y-auto" style={{ backgroundColor: '#0A0E1A', minHeight: 0 }}>
           {children}
         </main>
       </div>

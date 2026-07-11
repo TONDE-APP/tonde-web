@@ -98,6 +98,35 @@
         background: rgba(108, 71, 255, 0.35);
         color: #fff;
     }
+
+    /* ── Scrollbar custom — thème dark TONDE ── */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 99px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+    }
+
+    ::-webkit-scrollbar-corner {
+        background: transparent;
+    }
+
+    /* Firefox */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: #334155 transparent;
+    }
 }
 
 @layer utilities {

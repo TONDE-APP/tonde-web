@@ -388,7 +388,7 @@ export default function QueuePage() {
   const urgentCount    = tickets.filter((t) => t.priority === 'urgent' || t.priority === 'vip').length;
 
   return (
-    <div style={{ padding: '24px', fontFamily: 'Inter, sans-serif', height: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ padding: '24px', fontFamily: 'Inter, sans-serif', minHeight: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
