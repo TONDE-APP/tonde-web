@@ -743,7 +743,7 @@ function TabBilling({ canEdit, onToast }: { canEdit: boolean; onToast: (m: strin
     <div className="space-y-6">
 
       {/* ── Plan actuel ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {['Starter', 'Business', 'Enterprise'].map((plan) => {
           const isCurrent = plan === currentPlan;
           return (
