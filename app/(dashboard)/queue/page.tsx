@@ -387,6 +387,14 @@ export default function QueuePage() {
   const overflowCount  = guichets.filter((g) => g.status === 'overflow').length;
   const urgentCount    = tickets.filter((t) => t.priority === 'urgent' || t.priority === 'vip').length;
 
+  // ── Pagination ──
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(sortedTickets.length / PAGE_SIZE));
+  // Si un nouveau ticket arrive et dépasse la page courante, on reste sur la page 1
+  const safePage = Math.min(page, totalPages);
+  const pagedTickets = sortedTickets.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   return (
     <div style={{ padding: '24px', fontFamily: 'Inter, sans-serif', minHeight: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
@@ -422,14 +430,13 @@ export default function QueuePage() {
         </div>
       )}
 
-      {/* Main layout 30/70 */}
+      {/* Main layout 65/35 */}
       <div className="flex gap-0 flex-1 min-h-0 rounded-xl overflow-hidden"
         style={{ border: '1px solid #334155' }}>
 
-        {/* LEFT — Flux en attente */}
-        <div className="flex flex-col shrink-0"
-          style={{ width: '30%', minWidth: '260px', backgroundColor: '#0F1623',
-            borderRight: '1px solid #334155' }}>
+        {/* LEFT — Flux en attente (65%) */}
+        <div className="flex flex-col flex-1 min-w-0"
+          style={{ backgroundColor: '#0F1623', borderRight: '1px solid #334155' }}>
 
           {/* Header colonne gauche */}
           <div className="flex items-center justify-between px-4 py-3 shrink-0"
@@ -452,19 +459,80 @@ export default function QueuePage() {
             </div>
           </div>
 
-          {/* Liste tickets — s'étend jusqu'en bas */}
-          <div className="flex flex-col gap-2 overflow-y-auto flex-1 p-3">
-            {sortedTickets.map((t) => (
-              <TicketCard key={t.id} ticket={t}
-                onChangePriority={handleChangePriority}
-                onTransfer={setTransferTarget} />
-            ))}
+          {/* Grille 2 colonnes de tickets */}
+          <div className="flex-1 overflow-y-auto p-3">
+            <div className="grid grid-cols-2 gap-2">
+              {pagedTickets.map((t) => (
+                <TicketCard key={t.id} ticket={t}
+                  onChangePriority={handleChangePriority}
+                  onTransfer={setTransferTarget} />
+              ))}
+              {pagedTickets.length === 0 && (
+                <div className="col-span-2 flex items-center justify-center py-16">
+                  <p style={{ fontSize: '13px', color: '#334155' }}>Aucun ticket en attente</p>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 shrink-0"
+              style={{ borderTop: '1px solid #1e293b' }}>
+
+              {/* Info */}
+              <span style={{ fontSize: '11px', color: '#475569' }}>
+                {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, totalWaiting)} sur {totalWaiting}
+              </span>
+
+              {/* Controls */}
+              <div className="flex items-center gap-1">
+                {/* Précédent */}
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1}
+                  className="flex items-center justify-center w-7 h-7 rounded-lg transition-all text-xs font-medium"
+                  style={{ backgroundColor: 'transparent', border: '1px solid #1e293b',
+                    color: safePage === 1 ? '#334155' : '#64748b',
+                    cursor: safePage === 1 ? 'not-allowed' : 'pointer' }}
+                  onMouseEnter={(e) => { if (safePage !== 1) e.currentTarget.style.borderColor = '#6C47FF'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#1e293b'; }}>
+                  ‹
+                </button>
+
+                {/* Numéros de page */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button key={p} onClick={() => setPage(p)}
+                    className="flex items-center justify-center w-7 h-7 rounded-lg transition-all text-xs font-semibold"
+                    style={{
+                      backgroundColor: safePage === p ? '#6C47FF' : 'transparent',
+                      border: `1px solid ${safePage === p ? '#6C47FF' : '#1e293b'}`,
+                      color: safePage === p ? '#fff' : '#64748b',
+                      cursor: 'pointer',
+                      fontFamily: 'JetBrains Mono, monospace',
+                    }}
+                    onMouseEnter={(e) => { if (safePage !== p) e.currentTarget.style.borderColor = '#6C47FF'; }}
+                    onMouseLeave={(e) => { if (safePage !== p) e.currentTarget.style.borderColor = '#1e293b'; }}>
+                    {p}
+                  </button>
+                ))}
+
+                {/* Suivant */}
+                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+                  className="flex items-center justify-center w-7 h-7 rounded-lg transition-all text-xs font-medium"
+                  style={{ backgroundColor: 'transparent', border: '1px solid #1e293b',
+                    color: safePage === totalPages ? '#334155' : '#64748b',
+                    cursor: safePage === totalPages ? 'not-allowed' : 'pointer' }}
+                  onMouseEnter={(e) => { if (safePage !== totalPages) e.currentTarget.style.borderColor = '#6C47FF'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#1e293b'; }}>
+                  ›
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* RIGHT — Guichets */}
-        <div className="flex-1 overflow-y-auto p-4"
-          style={{ backgroundColor: '#0A0E1A' }}>
+        {/* RIGHT — Guichets (35%) */}
+        <div className="overflow-y-auto p-4 shrink-0"
+          style={{ width: '35%', minWidth: '280px', backgroundColor: '#0A0E1A' }}>
           <h2 className="mb-4" style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
             Guichets
             <span className="ml-2 px-1.5 py-0.5 rounded-full text-xs font-bold"
@@ -473,7 +541,7 @@ export default function QueuePage() {
               {onlineCount} actifs
             </span>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+          <div className="flex flex-col gap-3">
             {guichets.map((g) => (
               <GuichetCard key={g.id} guichet={g} onAction={handleGuichetAction} />
             ))}
