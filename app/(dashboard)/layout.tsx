@@ -441,16 +441,28 @@ function SidebarTooltip({ label, color = '#e2e8f0' }: { label: string; color?: s
   const [pos, setPos] = useState<{ top: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const li = ref.current?.parentElement;
+    if (!li) return;
+    const show = () => {
+      const rect = li.getBoundingClientRect();
+      setPos({ top: rect.top + rect.height / 2 });
+    };
+    const hide = () => setPos(null);
+    li.addEventListener('mouseenter', show);
+    li.addEventListener('mouseleave', hide);
+    return () => {
+      li.removeEventListener('mouseenter', show);
+      li.removeEventListener('mouseleave', hide);
+    };
+  }, []);
+
   return (
-    <div ref={ref}
-      className="absolute inset-0 pointer-events-none"
-      onMouseEnter={() => {
-        const el = ref.current?.parentElement;
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        setPos({ top: rect.top + rect.height / 2 });
-      }}
-      onMouseLeave={() => setPos(null)}>
+    <>
+      {/* Anchor invisible — juste pour récupérer la ref du parent */}
+      <span ref={ref} style={{ display: 'none' }} aria-hidden="true" />
+
+      {/* Tooltip rendu hors du flux — position fixed, jamais coupé */}
       {pos && (
         <div style={{
           position: 'fixed',
@@ -469,11 +481,12 @@ function SidebarTooltip({ label, color = '#e2e8f0' }: { label: string; color?: s
           boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
           pointerEvents: 'none',
           fontFamily: 'Inter, sans-serif',
+          letterSpacing: '0.01em',
         }}>
           {label}
         </div>
       )}
-    </div>
+    </>
   );
 }
 
