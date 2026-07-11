@@ -7,6 +7,7 @@ import {
   LayoutDashboard, ListOrdered, MapPin, Users, BarChart3,
   Settings, LogOut, ChevronDown, ChevronRight, Menu, X,
   Bell, Search, BookOpen, UserCog, Wifi, WifiOff,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -433,77 +434,166 @@ function ProfileMenu({ lang, onLogout }: { lang: Language; onLogout: () => void 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SIDEBAR TOOLTIP (position fixed pour éviter le clipping)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SidebarTooltip({ label, color = '#e2e8f0' }: { label: string; color?: string }) {
+  const [pos, setPos] = useState<{ top: number } | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  return (
+    <div ref={ref}
+      className="absolute inset-0 pointer-events-none"
+      onMouseEnter={() => {
+        const el = ref.current?.parentElement;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        setPos({ top: rect.top + rect.height / 2 });
+      }}
+      onMouseLeave={() => setPos(null)}>
+      {pos && (
+        <div style={{
+          position: 'fixed',
+          top: pos.top,
+          left: '72px',
+          transform: 'translateY(-50%)',
+          zIndex: 9999,
+          backgroundColor: '#1A2235',
+          border: '1px solid #334155',
+          borderRadius: '8px',
+          padding: '6px 12px',
+          fontSize: '12px',
+          fontWeight: 600,
+          color,
+          whiteSpace: 'nowrap',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          pointerEvents: 'none',
+          fontFamily: 'Inter, sans-serif',
+        }}>
+          {label}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ADMIN SHELL (Layout principal)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function AdminShell({ children, criticalAlerts = 2 }: { children: ReactNode; criticalAlerts?: number }) {
-  const router = useRouter();
+  const router   = useRouter();
   const pathname = usePathname();
-  const [lang, setLang] = useState<Language>('FR');
+  const [lang, setLang]               = useState<Language>('FR');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed]     = useState(false);
 
-  // Ferme la sidebar mobile au changement de route
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
   const handleLogout = () => router.push('/login');
+  const sidebarW = collapsed ? '64px' : '240px';
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#0A0E1A', fontFamily: 'Inter, sans-serif' }}>
 
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-30 lg:hidden" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
+        <div className="fixed inset-0 z-30 lg:hidden"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
           onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* ══ SIDEBAR ══ */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-40 flex flex-col w-60 transition-transform duration-200 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{ backgroundColor: '#0A0E1A', borderRight: '1px solid #334155', minHeight: '100vh' }}>
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-40 flex flex-col shrink-0
+          transition-all duration-200 ease-in-out lg:translate-x-0
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{
+          width: sidebarW,
+          backgroundColor: '#0A0E1A',
+          borderRight: '1px solid #334155',
+          minHeight: '100vh',
+          overflow: 'visible',
+        }}>
 
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-5 shrink-0" style={{ height: '64px', borderBottom: '1px solid #334155' }}>
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#6C47FF' }}>
+        {/* ── Logo ── */}
+        <div className="flex items-center shrink-0 px-3 gap-3"
+          style={{ height: '64px', borderBottom: '1px solid #334155' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+            style={{ backgroundColor: '#6C47FF' }}>
             <svg width="18" height="18" viewBox="0 0 22 22" fill="none" aria-hidden="true">
               <path d="M11 2L20 7V15L11 20L2 15V7L11 2Z" stroke="white" strokeWidth="2" strokeLinejoin="round" />
               <path d="M11 2V20M2 7L20 15M20 7L2 15" stroke="white" strokeWidth="1.5" strokeOpacity="0.35" />
             </svg>
           </div>
-          <span className="text-lg font-bold tracking-widest" style={{ color: '#ffffff' }}>TONDE</span>
-          <button className="ml-auto lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Fermer">
+          {!collapsed && (
+            <span className="text-lg font-bold tracking-widest flex-1 whitespace-nowrap overflow-hidden"
+              style={{ color: '#ffffff' }}>TONDE</span>
+          )}
+          <button className="lg:hidden ml-auto" onClick={() => setSidebarOpen(false)} aria-label="Fermer">
             <X size={17} color="#64748b" />
           </button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        {/* ── Nav ── */}
+        <nav className="flex-1 overflow-y-auto"
+          style={{ padding: collapsed ? '16px 8px' : '16px 12px', overflowX: 'visible' }}>
           <ul className="flex flex-col gap-0.5">
             {navItems.map(({ to, icon: Icon, labels }) => {
               const isActive = pathname === to || (to !== '/dashboard' && pathname.startsWith(to));
               return (
-                <li key={to}>
+                <li key={to} className="relative">
                   <Link href={to}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
-                    style={isActive ? { backgroundColor: '#6C47FF', color: '#ffffff' } : { color: '#94a3b8' }}
+                    className="flex items-center rounded-lg text-sm font-medium transition-all duration-150"
+                    style={{
+                      gap: collapsed ? '0' : '12px',
+                      padding: collapsed ? '10px 0' : '10px 12px',
+                      justifyContent: collapsed ? 'center' : 'flex-start',
+                      ...(isActive
+                        ? { backgroundColor: '#6C47FF', color: '#ffffff' }
+                        : { color: '#94a3b8' }),
+                    }}
                     onMouseEnter={(e) => { if (!isActive) { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.05)'; (e.currentTarget as HTMLElement).style.color = '#ffffff'; } }}
                     onMouseLeave={(e) => { if (!isActive) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#94a3b8'; } }}>
-                    <Icon size={16} strokeWidth={1.75} />
-                    <span>{labels[lang]}</span>
+                    <Icon size={16} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+                    {!collapsed && <span className="whitespace-nowrap overflow-hidden">{labels[lang]}</span>}
                   </Link>
+                  {collapsed && <SidebarTooltip label={labels[lang]} />}
                 </li>
               );
             })}
           </ul>
         </nav>
 
-        {/* Logout sidebar */}
-        <div className="px-3 py-4" style={{ borderTop: '1px solid #1e293b' }}>
+        {/* ── Logout ── */}
+        <div className="relative" style={{ borderTop: '1px solid #1e293b', padding: collapsed ? '12px 8px' : '12px' }}>
           <button onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
-            style={{ color: '#64748b' }}
+            className="flex items-center rounded-lg text-sm font-medium transition-all duration-150 w-full"
+            style={{
+              gap: collapsed ? '0' : '12px',
+              padding: collapsed ? '10px 0' : '10px 12px',
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              color: '#64748b',
+            }}
             onMouseEnter={(e) => { e.currentTarget.style.color = '#F43F5E'; e.currentTarget.style.backgroundColor = 'rgba(244,63,94,0.08)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.backgroundColor = 'transparent'; }}>
-            <LogOut size={16} strokeWidth={1.75} />
-            <span>{logoutLabel[lang]}</span>
+            <LogOut size={16} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+            {!collapsed && <span className="whitespace-nowrap">{logoutLabel[lang]}</span>}
+          </button>
+          {collapsed && <SidebarTooltip label={logoutLabel[lang]} color="#F43F5E" />}
+        </div>
+
+        {/* ── Bouton collapse — desktop, toujours visible en bas ── */}
+        <div className="hidden lg:flex items-center justify-center shrink-0 py-3"
+          style={{ borderTop: '1px solid #334155' }}>
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            aria-label={collapsed ? 'Agrandir la sidebar' : 'Réduire la sidebar'}
+            className="flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150"
+            style={{ color: '#475569' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#e2e8f0'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#475569'; }}>
+            {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           </button>
         </div>
       </aside>
@@ -514,7 +604,6 @@ function AdminShell({ children, criticalAlerts = 2 }: { children: ReactNode; cri
         {/* ── HEADER ── */}
         <header className="flex items-center justify-between px-4 shrink-0 gap-3"
           style={{ height: '64px', backgroundColor: '#0A0E1A', borderBottom: '1px solid #334155' }}>
-          {/* Mobile burger */}
           <button className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg" onClick={() => setSidebarOpen(true)}
             style={{ color: '#64748b' }} aria-label="Ouvrir le menu">
             <Menu size={20} />
