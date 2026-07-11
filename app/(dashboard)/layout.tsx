@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  LayoutDashboard, ListOrdered, MapPin, Users, BarChart3,
+  LayoutDashboard, ListOrdered, Users, BarChart3,
   Settings, LogOut, ChevronDown, ChevronRight, Menu, X,
   Bell, Search, BookOpen, UserCog, Wifi, WifiOff,
   PanelLeftClose, PanelLeftOpen,
@@ -27,7 +27,6 @@ interface Agency { id: string; label: string; agencyId: string }
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, labels: { FR: 'Aperçu',         EN: 'Overview',  RN: 'Incamake',      SW: 'Muhtasari'  } },
   { to: '/queue',     icon: ListOrdered,     labels: { FR: "Files d'attente", EN: 'Queues',    RN: 'Imirongo',      SW: 'Foleni'     } },
-  { to: '/locations', icon: MapPin,          labels: { FR: 'Agences',         EN: 'Locations', RN: 'Amashami',      SW: 'Matawi'     } },
   { to: '/agents',    icon: Users,           labels: { FR: 'Agents',          EN: 'Agents',    RN: 'Abakozi',       SW: 'Mawakala'   } },
   { to: '/analytics', icon: BarChart3,       labels: { FR: 'Statistiques',    EN: 'Analytics', RN: 'Imibare',       SW: 'Takwimu'    } },
   { to: '/settings',  icon: Settings,        labels: { FR: 'Paramètres',      EN: 'Settings',  RN: 'Igenamiterere', SW: 'Mipangilio' } },
